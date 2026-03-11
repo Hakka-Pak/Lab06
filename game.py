@@ -9,10 +9,10 @@ GRID_SIZE = 20
 FPS = 15
 
 # Colors
-COLOR_BLACK = (0, 0, 0)
+COLOR_DARK_BLUE = (0, 0, 50)
 COLOR_WHITE = (255, 255, 255)
-COLOR_GREEN_BODY = (34, 139, 34)
-COLOR_GREEN_HEAD = (50, 205, 50)
+COLOR_YELLOW_BODY = (255, 255, 0)
+COLOR_ORANGE_HEAD = (255, 165, 0)
 COLOR_RED_FOOD = (255, 0, 0)
 COLOR_RED_HIGHLIGHT = (255, 100, 100)
 COLOR_RED_SHADOW = (150, 0, 0)
@@ -100,11 +100,11 @@ class SnakeGame:
             self.snake.pop()
 
     def draw(self):
-        self.screen.fill(COLOR_BLACK)
+        self.screen.fill(COLOR_DARK_BLUE)
 
         # Draw Snake
         for i, (x, y) in enumerate(self.snake):
-            color = COLOR_GREEN_HEAD if i == 0 else COLOR_GREEN_BODY
+            color = COLOR_ORANGE_HEAD if i == 0 else COLOR_YELLOW_BODY
             pygame.draw.rect(self.screen, color, (x, y, GRID_SIZE, GRID_SIZE))
 
         # Draw Food
