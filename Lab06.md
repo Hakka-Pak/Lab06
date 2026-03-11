@@ -334,7 +334,7 @@ Fill in your answers below. Then update your GitHub URL and submit this file to 
 
 **GitHub Repository URL:**
 ```
-https://github.com/YOUR_USERNAME/lab06
+https://github.com/Hakka-Pak/Lab06
 ```
 
 ---
