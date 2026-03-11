@@ -342,7 +342,7 @@ https://github.com/Hakka-Pak/Lab06
 **Q1. Which template did you choose? Why did you pick this game?**
 
 ```
-Snake. It is a classic game that is straightforward to implement and offers many possibilities for customization and extension.
+Ping Pong. It is a classic two-player game that is fun to play and has clear mechanics for collision and scoring.
 ```
 
 ---
@@ -350,7 +350,7 @@ Snake. It is a classic game that is straightforward to implement and offers many
 **Q2. Describe your first draft: Did the game run on the first try? If not, what error appeared?**
 
 ```
-Yes, the first draft ran on the first try without any crashes. It had the basic movement, food spawning, and score tracking features as requested.
+Yes, the first draft ran on the first try. It included basic movement for both paddles, ball bouncing, and scoring for two players.
 ```
 
 ---
@@ -358,7 +358,7 @@ Yes, the first draft ran on the first try without any crashes. It had the basic 
 **Q3. What was the hardest bug to fix? How did you solve it (AI prompt, manual fix, or rollback)?**
 
 ```
-The implementation was stable, but ensuring that the snake didn't reverse into itself (e.g., going from Right to Left) required adding a check in the direction handling logic, which I solved by comparing the new direction with the opposite of the current one.
+The collision logic between the ball and the paddles needed some fine-tuning to ensure the ball didn't get "stuck" inside the paddle. I solved this by using `pygame.Rect.colliderect` and immediately setting the ball's X-speed to move it away from the paddle.
 ```
 
 ---
@@ -366,9 +366,9 @@ The implementation was stable, but ensuring that the snake didn't reverse into i
 **Q4. What customizations did you make in Step 5? List all 3+ changes.**
 
 ```
-1. Increased the window size from 800x600 to 1000x800 for more play area.
-2. Changed the color scheme: background to dark blue, snake body to yellow, and snake head to orange.
-3. Increased the game speed by raising the clock tick rate from 10 to 15 FPS.
+1. Changed the window size to 1000x800 for a larger playing field.
+2. Changed the paddle colors to neon green and the ball to yellow.
+3. Increased the paddle speed and ball speed for a more challenging game.
 ```
 
 ---
@@ -384,7 +384,7 @@ No.
 **Q6. (Bonus only) What new feature did you add? Briefly describe how it works.**
 
 ```
-I added a "Special Food" feature. There is a 20% chance that a spawned food item will be purple instead of red. Purple food is worth 50 points, whereas normal red food is worth 10 points.
+I added a "Speed Up" feature where the ball's speed increases slightly every time it hits a paddle, making the game progressively faster and more difficult.
 ```
 
 ---
@@ -392,7 +392,7 @@ I added a "Special Food" feature. There is a 20% chance that a spawned food item
 **Q7. What is one thing you learned from this lab?**
 
 ```
-I learned how to integrate Git's version control into an AI-assisted development workflow, using commits to mark stable points and track incremental customizations.
+I learned how to manage multiple iterations of a project using Git and how to use AI to quickly prototype and then refine game mechanics.
 ```
 
 ---

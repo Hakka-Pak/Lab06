@@ -5,55 +5,51 @@ import sys
 # Constants
 WINDOW_WIDTH = 1000
 WINDOW_HEIGHT = 800
-GRID_SIZE = 20
-FPS = 15
+PADDLE_WIDTH = 15
+PADDLE_HEIGHT = 100
+BALL_SIZE = 15
+FPS = 60
 
 # Colors
-COLOR_DARK_BLUE = (0, 0, 50)
+COLOR_BLACK = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
-COLOR_YELLOW_BODY = (255, 255, 0)
-COLOR_ORANGE_HEAD = (255, 165, 0)
-COLOR_RED_FOOD = (255, 0, 0)
-COLOR_RED_HIGHLIGHT = (255, 100, 100)
-COLOR_RED_SHADOW = (150, 0, 0)
-COLOR_PURPLE_FOOD = (128, 0, 128)
-COLOR_PURPLE_HIGHLIGHT = (200, 100, 200)
-COLOR_PURPLE_SHADOW = (75, 0, 75)
+COLOR_NEON_GREEN = (57, 255, 20)
+COLOR_YELLOW = (255, 255, 0)
 
-class SnakeGame:
+class PongGame:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-        pygame.display.set_caption("Snake Game - Lab 06")
+        pygame.display.set_caption("Ping Pong - Lab 06")
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont("Arial", 24)
+        self.font = pygame.font.SysFont("Arial", 36)
         self.large_font = pygame.font.SysFont("Arial", 72)
         self.reset_game()
 
     def reset_game(self):
-        self.snake = [(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2)]
-        self.direction = pygame.K_d
-        self.score = 0
-        self.game_over = False
-        self.food_list = [] # List of (x, y, type) where type is 'normal' or 'special'
-        for _ in range(3):
-            self.spawn_food()
+        # Paddles
+        self.paddle1_y = (WINDOW_HEIGHT - PADDLE_HEIGHT) // 2
+        self.paddle2_y = (WINDOW_HEIGHT - PADDLE_HEIGHT) // 2
+        self.paddle_speed = 9 # Increased speed
 
-    def spawn_food(self):
-        while True:
-            x = random.randrange(0, WINDOW_WIDTH, GRID_SIZE)
-            y = random.randrange(0, WINDOW_HEIGHT, GRID_SIZE)
-            # Check if position is occupied by snake or existing food
-            occupied = False
-            for fx, fy, ft in self.food_list:
-                if (x, y) == (fx, fy):
-                    occupied = True
-                    break
-            
-            if (x, y) not in self.snake and not occupied:
-                food_type = 'special' if random.random() < 0.2 else 'normal'
-                self.food_list.append((x, y, food_type))
-                break
+        # Ball
+        self.ball_x = WINDOW_WIDTH // 2
+        self.ball_y = WINDOW_HEIGHT // 2
+        self.initial_ball_speed = 6
+        self.ball_speed_x = self.initial_ball_speed * random.choice([1, -1])
+        self.ball_speed_y = self.initial_ball_speed * random.choice([1, -1])
+
+        # Scores
+        self.score1 = 0
+        self.score2 = 0
+        self.game_over = False
+        self.winner = None
+
+    def reset_ball(self, scorer):
+        self.ball_x = WINDOW_WIDTH // 2
+        self.ball_y = WINDOW_HEIGHT // 2
+        self.ball_speed_x = self.initial_ball_speed if scorer == 2 else -self.initial_ball_speed
+        self.ball_speed_y = self.initial_ball_speed * random.choice([1, -1])
 
     def handle_input(self):
         for event in pygame.event.get():
@@ -61,94 +57,94 @@ class SnakeGame:
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if self.game_over:
-                    if event.key == pygame.K_r:
-                        self.reset_game()
-                else:
-                    if event.key in [pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d]:
-                        # Prevent reversing direction
-                        if (event.key == pygame.K_w and self.direction != pygame.K_s) or \
-                           (event.key == pygame.K_s and self.direction != pygame.K_w) or \
-                           (event.key == pygame.K_a and self.direction != pygame.K_d) or \
-                           (event.key == pygame.K_d and self.direction != pygame.K_a):
-                            self.direction = event.key
+                if self.game_over and event.key == pygame.K_r:
+                    self.reset_game()
+
+        keys = pygame.key.get_pressed()
+        if not self.game_over:
+            # Player 1 (W/S)
+            if keys[pygame.K_w] and self.paddle1_y > 0:
+                self.paddle1_y -= self.paddle_speed
+            if keys[pygame.K_s] and self.paddle1_y < WINDOW_HEIGHT - PADDLE_HEIGHT:
+                self.paddle1_y += self.paddle_speed
+            
+            # Player 2 (Arrows)
+            if keys[pygame.K_UP] and self.paddle2_y > 0:
+                self.paddle2_y -= self.paddle_speed
+            if keys[pygame.K_DOWN] and self.paddle2_y < WINDOW_HEIGHT - PADDLE_HEIGHT:
+                self.paddle2_y += self.paddle_speed
 
     def update(self):
         if self.game_over:
             return
 
-        # Calculate new head position
-        head_x, head_y = self.snake[0]
-        if self.direction == pygame.K_w:
-            head_y -= GRID_SIZE
-        elif self.direction == pygame.K_s:
-            head_y += GRID_SIZE
-        elif self.direction == pygame.K_a:
-            head_x -= GRID_SIZE
-        elif self.direction == pygame.K_d:
-            head_x += GRID_SIZE
+        # Move ball
+        self.ball_x += self.ball_speed_x
+        self.ball_y += self.ball_speed_y
 
-        new_head = (head_x, head_y)
+        # Ball collision with top/bottom walls
+        if self.ball_y <= 0 or self.ball_y >= WINDOW_HEIGHT - BALL_SIZE:
+            self.ball_speed_y *= -1
 
-        # Check collisions
-        if (head_x < 0 or head_x >= WINDOW_WIDTH or
-            head_y < 0 or head_y >= WINDOW_HEIGHT or
-            new_head in self.snake):
-            self.game_over = True
-            return
+        # Ball collision with paddles
+        ball_rect = pygame.Rect(self.ball_x, self.ball_y, BALL_SIZE, BALL_SIZE)
+        paddle1_rect = pygame.Rect(30, self.paddle1_y, PADDLE_WIDTH, PADDLE_HEIGHT)
+        paddle2_rect = pygame.Rect(WINDOW_WIDTH - 30 - PADDLE_WIDTH, self.paddle2_y, PADDLE_WIDTH, PADDLE_HEIGHT)
 
-        self.snake.insert(0, new_head)
-
-        # Check food collision
-        food_eaten = False
-        for i, (fx, fy, ft) in enumerate(self.food_list):
-            if new_head == (fx, fy):
-                self.food_list.pop(i)
-                self.score += 50 if ft == 'special' else 10
-                self.spawn_food()
-                food_eaten = True
-                break
+        if ball_rect.colliderect(paddle1_rect):
+            self.ball_speed_x = abs(self.ball_speed_x)
+            self.ball_speed_x *= 1.1 # Bonus: Speed Up
+            self.ball_speed_y *= 1.1
+            self.ball_speed_y += (self.ball_y + BALL_SIZE/2 - (self.paddle1_y + PADDLE_HEIGHT/2)) * 0.1
         
-        if not food_eaten:
-            self.snake.pop()
+        if ball_rect.colliderect(paddle2_rect):
+            self.ball_speed_x = -abs(self.ball_speed_x)
+            self.ball_speed_x *= 1.1 # Bonus: Speed Up
+            self.ball_speed_y *= 1.1
+            self.ball_speed_y += (self.ball_y + BALL_SIZE/2 - (self.paddle2_y + PADDLE_HEIGHT/2)) * 0.1
+
+        # Scoring
+        if self.ball_x < 0:
+            self.score2 += 1
+            if self.score2 >= 11:
+                self.game_over = True
+                self.winner = 2
+            else:
+                self.reset_ball(2)
+        
+        if self.ball_x > WINDOW_WIDTH:
+            self.score1 += 1
+            if self.score1 >= 11:
+                self.game_over = True
+                self.winner = 1
+            else:
+                self.reset_ball(1)
 
     def draw(self):
-        self.screen.fill(COLOR_DARK_BLUE)
+        self.screen.fill(COLOR_BLACK)
 
-        # Draw Snake
-        for i, (x, y) in enumerate(self.snake):
-            color = COLOR_ORANGE_HEAD if i == 0 else COLOR_YELLOW_BODY
-            pygame.draw.rect(self.screen, color, (x, y, GRID_SIZE, GRID_SIZE))
+        # Draw net
+        for y in range(0, WINDOW_HEIGHT, 40):
+            pygame.draw.rect(self.screen, COLOR_WHITE, (WINDOW_WIDTH // 2 - 2, y, 4, 20))
 
-        # Draw Food
-        for x, y, ft in self.food_list:
-            if ft == 'special':
-                main_color = COLOR_PURPLE_FOOD
-                highlight_color = COLOR_PURPLE_HIGHLIGHT
-                shadow_color = COLOR_PURPLE_SHADOW
-            else:
-                main_color = COLOR_RED_FOOD
-                highlight_color = COLOR_RED_HIGHLIGHT
-                shadow_color = COLOR_RED_SHADOW
+        # Draw paddles (Neon Green)
+        pygame.draw.rect(self.screen, COLOR_NEON_GREEN, (30, self.paddle1_y, PADDLE_WIDTH, PADDLE_HEIGHT))
+        pygame.draw.rect(self.screen, COLOR_NEON_GREEN, (WINDOW_WIDTH - 30 - PADDLE_WIDTH, self.paddle2_y, PADDLE_WIDTH, PADDLE_HEIGHT))
 
-            # Simple 3D effect (circle with highlight)
-            center = (x + GRID_SIZE // 2, y + GRID_SIZE // 2)
-            radius = GRID_SIZE // 2 - 2
-            pygame.draw.circle(self.screen, shadow_color, center, radius)
-            pygame.draw.circle(self.screen, main_color, center, radius - 1)
-            pygame.draw.circle(self.screen, highlight_color, (center[0] - 3, center[1] - 3), radius // 3)
+        # Draw ball (Yellow)
+        pygame.draw.rect(self.screen, COLOR_YELLOW, (self.ball_x, self.ball_y, BALL_SIZE, BALL_SIZE))
 
-        # Draw UI
-        score_text = self.font.render(f"Score: {self.score}", True, COLOR_WHITE)
-        food_text = self.font.render(f"Food Items: {len(self.food_list)}", True, COLOR_WHITE)
-        self.screen.blit(score_text, (10, 10))
-        self.screen.blit(food_text, (10, 40))
+        # Draw scores
+        score1_text = self.font.render(str(self.score1), True, COLOR_WHITE)
+        score2_text = self.font.render(str(self.score2), True, COLOR_WHITE)
+        self.screen.blit(score1_text, (WINDOW_WIDTH // 4, 20))
+        self.screen.blit(score2_text, (3 * WINDOW_WIDTH // 4, 20))
 
         if self.game_over:
-            over_text = self.large_font.render("GAME OVER", True, COLOR_WHITE)
+            win_text = self.large_font.render(f"Player {self.winner} Wins!", True, COLOR_WHITE)
             restart_text = self.font.render("Press 'R' to Restart", True, COLOR_WHITE)
-            self.screen.blit(over_text, (WINDOW_WIDTH // 2 - 180, WINDOW_HEIGHT // 2 - 50))
-            self.screen.blit(restart_text, (WINDOW_WIDTH // 2 - 90, WINDOW_HEIGHT // 2 + 30))
+            self.screen.blit(win_text, (WINDOW_WIDTH // 2 - 250, WINDOW_HEIGHT // 2 - 50))
+            self.screen.blit(restart_text, (WINDOW_WIDTH // 2 - 120, WINDOW_HEIGHT // 2 + 50))
 
         pygame.display.flip()
 
@@ -160,5 +156,5 @@ class SnakeGame:
             self.clock.tick(FPS)
 
 if __name__ == "__main__":
-    game = SnakeGame()
+    game = PongGame()
     game.run()
