@@ -16,6 +16,9 @@ COLOR_ORANGE_HEAD = (255, 165, 0)
 COLOR_RED_FOOD = (255, 0, 0)
 COLOR_RED_HIGHLIGHT = (255, 100, 100)
 COLOR_RED_SHADOW = (150, 0, 0)
+COLOR_PURPLE_FOOD = (128, 0, 128)
+COLOR_PURPLE_HIGHLIGHT = (200, 100, 200)
+COLOR_PURPLE_SHADOW = (75, 0, 75)
 
 class SnakeGame:
     def __init__(self):
@@ -32,7 +35,7 @@ class SnakeGame:
         self.direction = pygame.K_d
         self.score = 0
         self.game_over = False
-        self.food_list = []
+        self.food_list = [] # List of (x, y, type) where type is 'normal' or 'special'
         for _ in range(3):
             self.spawn_food()
 
@@ -40,8 +43,16 @@ class SnakeGame:
         while True:
             x = random.randrange(0, WINDOW_WIDTH, GRID_SIZE)
             y = random.randrange(0, WINDOW_HEIGHT, GRID_SIZE)
-            if (x, y) not in self.snake and (x, y) not in self.food_list:
-                self.food_list.append((x, y))
+            # Check if position is occupied by snake or existing food
+            occupied = False
+            for fx, fy, ft in self.food_list:
+                if (x, y) == (fx, fy):
+                    occupied = True
+                    break
+            
+            if (x, y) not in self.snake and not occupied:
+                food_type = 'special' if random.random() < 0.2 else 'normal'
+                self.food_list.append((x, y, food_type))
                 break
 
     def handle_input(self):
@@ -90,11 +101,13 @@ class SnakeGame:
 
         # Check food collision
         food_eaten = False
-        if new_head in self.food_list:
-            self.food_list.remove(new_head)
-            self.score += 10
-            self.spawn_food()
-            food_eaten = True
+        for i, (fx, fy, ft) in enumerate(self.food_list):
+            if new_head == (fx, fy):
+                self.food_list.pop(i)
+                self.score += 50 if ft == 'special' else 10
+                self.spawn_food()
+                food_eaten = True
+                break
         
         if not food_eaten:
             self.snake.pop()
@@ -108,13 +121,22 @@ class SnakeGame:
             pygame.draw.rect(self.screen, color, (x, y, GRID_SIZE, GRID_SIZE))
 
         # Draw Food
-        for x, y in self.food_list:
+        for x, y, ft in self.food_list:
+            if ft == 'special':
+                main_color = COLOR_PURPLE_FOOD
+                highlight_color = COLOR_PURPLE_HIGHLIGHT
+                shadow_color = COLOR_PURPLE_SHADOW
+            else:
+                main_color = COLOR_RED_FOOD
+                highlight_color = COLOR_RED_HIGHLIGHT
+                shadow_color = COLOR_RED_SHADOW
+
             # Simple 3D effect (circle with highlight)
             center = (x + GRID_SIZE // 2, y + GRID_SIZE // 2)
             radius = GRID_SIZE // 2 - 2
-            pygame.draw.circle(self.screen, COLOR_RED_SHADOW, center, radius)
-            pygame.draw.circle(self.screen, COLOR_RED_FOOD, center, radius - 1)
-            pygame.draw.circle(self.screen, COLOR_RED_HIGHLIGHT, (center[0] - 3, center[1] - 3), radius // 3)
+            pygame.draw.circle(self.screen, shadow_color, center, radius)
+            pygame.draw.circle(self.screen, main_color, center, radius - 1)
+            pygame.draw.circle(self.screen, highlight_color, (center[0] - 3, center[1] - 3), radius // 3)
 
         # Draw UI
         score_text = self.font.render(f"Score: {self.score}", True, COLOR_WHITE)
